@@ -1,0 +1,48 @@
+//@version=5
+strategy("MA & MACD Strategy", overlay=true, shorttitle="MA_MACD_Strategy", default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// Parameters for Moving Averages
+fastLength = input.int(9, title="Fast MA Length")
+slowLength = input.int(21, title="Slow MA Length")
+
+// Parameters for MACD
+macdFastLength = input.int(12, title="MACD Fast Length")
+macdSlowLength = input.int(26, title="MACD Slow Length")
+macdSignalLength = input.int(9, title="MACD Signal Length")
+
+// Moving Averages Calculation
+fastMA = ta.sma(close, fastLength)
+slowMA = ta.sma(close, slowLength)
+
+// MACD Calculation
+[macdLine, signalLine, _] = ta.macd(close, macdFastLength, macdSlowLength, macdSignalLength)
+
+// Plot Moving Averages
+plot(fastMA, title="Fast MA", color=color.blue, linewidth=2)
+plot(slowMA, title="Slow MA", color=color.red, linewidth=2)
+
+// Buy and Sell Conditions
+buyCondition = ta.crossover(fastMA, slowMA) and ta.crossover(macdLine, signalLine)
+sellCondition = ta.crossunder(fastMA, slowMA) and ta.crossunder(macdLine, signalLine)
+
+// Plot Buy and Sell Signals on Chart
+plotshape(series=buyCondition, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(series=sellCondition, title="Sell Signal", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")
+
+// Strategy Execution
+if (buyCondition)
+    strategy.entry("Buy", strategy.long)
+
+if (sellCondition)
+    strategy.exit("Sell", from_entry="Buy", profit=100, stop=50)  // Adjust 'profit' and 'stop' levels as needed
+
+// Debugging: Plot Condition Triggers
+plotchar(series=buyCondition, title="Buy Condition", location=location.top, char='B', color=color.green, size=size.small)
+plotchar(series=sellCondition, title="Sell Condition", location=location.bottom, char='S', color=color.red, size=size.small)
+
+// Optional: Display MACD & Signal Line on Subplot
+macdHist = macdLine - signalLine
+hline(0, "Zero Line", color=color.gray)
+plot(macdLine, color=color.blue, title="MACD Line")
+plot(signalLine, color=color.orange, title="Signal Line")
+plot(macdHist, title="MACD Histogram", color=color.red, style=plot.style_histogram)
